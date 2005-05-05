@@ -16,7 +16,7 @@ eval {
     $plugin = new MT::Plugin();
     $plugin->name("FlickrPublicPhotos Plugin");
     $plugin->description("Add FlickrPublicPhotos container and related tags. Version 0.10");
-    $plugin->doc_link("http://as-is.net/hacks/2005/05/flickr_public_photos.html");
+    $plugin->doc_link("http://as-is.net/hacks/2005/05/flickrpublicphotos_plugin.html");
     MT->add_plugin($plugin);
 };
 
@@ -94,14 +94,14 @@ sub new {
 package MT::Plugin::FlickrPublicPhotos::API;
 use base 'Flickr::API';
 use XML::Parser::Lite::Tree::XPath;
-use constant API_KEY => ' 9765114fb37045ea8d2ca9d813e24b63';
+use constant API_KEY => '9765114fb37045ea8d2ca9d813e24b63';
 
 sub new {
     my $class = shift;
     bless $class->SUPER::new({ key => API_KEY }) => $class;
 }
 
-sub nsid {
+sub resolve_nsid {
     my $class = shift;
     my ($uname) = @_;
     return $uname if $uname =~ /^\d+\@N00$/;
@@ -119,7 +119,7 @@ sub photos {
     my $class = shift;
     my ($uname) = @_;
     my @photos = ();
-    my $nsid = $class->nsid($uname);
+    my $nsid = $class->resolve_nsid($uname);
     my $rsp = $class->execute_method('flickr.people.getPublicPhotos',
 				     { user_id => $nsid });
     die "Flickr request failed: " . $rsp->{error_message} . "\n"
