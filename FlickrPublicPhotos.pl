@@ -1,6 +1,6 @@
 # A plugin for adding "FlickrPublicPhotos" container and related tags
 #
-# Release 0.10 (Mar 5, 2005)
+# Release 0.11 (Mar 6, 2005)
 #
 # This software is provided as-is. You may use it for commercial or 
 # personal use. If you distribute it, please keep this notice intact.
@@ -15,7 +15,7 @@ eval {
     require MT::Plugin;
     $plugin = new MT::Plugin();
     $plugin->name("FlickrPublicPhotos Plugin");
-    $plugin->description("Add FlickrPublicPhotos container and related tags. Version 0.10");
+    $plugin->description("Add FlickrPublicPhotos container and related tags. Version 0.11");
     $plugin->doc_link("http://as-is.net/hacks/2005/05/flickrpublicphotos_plugin.html");
     MT->add_plugin($plugin);
 };
@@ -58,37 +58,42 @@ sub photos {
 }
 
 sub photo_title {
-    $_[0]->stash('flickr_public_photo')->{title};
+    $_[0]->stash('flickr_public_photo')->title;
 }
 
 sub photo_url {
-    my $photo = $_[0]->stash('flickr_public_photo');
-    my $url = 'http://www.flickr.com/photos/' . $photo->{nsid} . '/' . $photo->{id} . '/';
-    $url;
+    $_[0]->stash('flickr_public_photo')->url;
 }
 
 sub photo_img_url {
-    my ($ctx, $args) = @_;
-    my $photo = $ctx->stash('flickr_public_photo');
-    my $size = $args->{size} || 't';
-    my $url = 'http://photos' . $photo->{server} . '.flickr.com/' . $photo->{id} . '_' . $photo->{secret} . '_' . $size . '.jpg';
-    $url;
+    $_[0]->stash('flickr_public_photo')->img_url($_[1]->{size} || 't');
 }
 
 package MT::Plugin::FlickrPublicPhotos::Photo;
-use constant DEFAULT => {
-    id => undef,
-    nsid => undef,
-    secret => undef,
-    server => undef,
-    title => undef
-};
 
 sub new {
-    my $class = shift;
-    my %params = @_;
-    my $self = {};
-    bless $self => $class;
+    my ($class, $params) = @_;
+    $params ||= {};
+    bless $params, $class;
+}
+
+sub title {
+    my $this = shift;
+    $this->{title} || '';
+}
+
+sub url {
+    my $this = shift;
+    my $url = 'http://www.flickr.com/photos/' . $this->{nsid} . '/' . $this->{id} . '/';
+    $url;
+}
+
+sub img_url {
+    my $this = shift;
+    my ($size) = @_;
+    $size ||= 't';
+    my $url = 'http://photos' . $this->{server} . '.flickr.com/' . $this->{id} . '_' . $this->{secret} . '_' . $size . '.jpg';
+    $url;
 }
 
 package MT::Plugin::FlickrPublicPhotos::API;
@@ -97,16 +102,21 @@ use XML::Parser::Lite::Tree::XPath;
 use constant API_KEY => '9765114fb37045ea8d2ca9d813e24b63';
 
 sub new {
-    my $class = shift;
-    bless $class->SUPER::new({ key => API_KEY }) => $class;
+    my ($class, $params) = @_;
+    my $key = $params->{key} || API_KEY;
+    bless $class->SUPER::new({ key => $key }), $class;
 }
 
 sub resolve_nsid {
-    my $class = shift;
+    my $this = shift;
     my ($uname) = @_;
     return $uname if $uname =~ /^\d+\@N00$/;
-    my $rsp = $class->execute_method('flickr.people.findByUsername', 
-				     { username => $uname });
+
+    my $rsp = ($uname =~ /^[^@]+@[^.]+\..+/) ?
+	$this->execute_method('flickr.people.findByEmail',
+			      { find_email => $uname }) :
+	$this->execute_method('flickr.people.findByUsername',
+			      { username => $uname });
     die "Flickr request failed: " . $rsp->{error_message} . "\n"
 	unless $rsp->{success} == 1;
 
@@ -116,12 +126,12 @@ sub resolve_nsid {
 }
 
 sub photos {
-    my $class = shift;
+    my $this = shift;
     my ($uname) = @_;
     my @photos = ();
-    my $nsid = $class->resolve_nsid($uname);
-    my $rsp = $class->execute_method('flickr.people.getPublicPhotos',
-				     { user_id => $nsid });
+    my $nsid = $this->resolve_nsid($uname);
+    my $rsp = $this->execute_method('flickr.people.getPublicPhotos',
+				    { user_id => $nsid });
     die "Flickr request failed: " . $rsp->{error_message} . "\n"
 	unless $rsp->{success} == 1;
 
