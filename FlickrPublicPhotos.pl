@@ -31,12 +31,46 @@ MT::Template::Context->add_tag('FlickrPublicPhotoUploadDate' => \&date_upload);
 MT::Template::Context->add_tag('FlickrPublicPhotoTakenDate' => \&date_taken);
 MT::Template::Context->add_tag('FlickrPublicPhotoOwnerName' => \&owner_name);
 
+# Load photos via FlickrAPI
+sub load_photos_fapi {
+    my ($user) = @_;
+    my $flickr = new MT::Plugin::FlickrPublicPhotos::API();
+    return $flickr->photos($user);
+}
+
+# Load and cache photos
+sub load_photos {
+    my ($user, $refresh) = @_;
+    require MT::PluginData;
+    my $pd = MT::PluginData->load({ plugin => 'FlickrPublicPhotos',
+				    key => $user });
+    if (!$pd) {
+	$pd = new MT::PluginData();
+	$pd->plugin('FlickrPublicPhotos');
+	$pd->key($user);
+    }
+    my $data = $pd->data() || {};
+    if (!defined($data->{last_updated}) || !defined($data->{photos}) ||
+	(time - $data->{last_updated} >= $refresh)) {
+	my @photos = eval { load_photos_fapi($user); };
+	# if FlickrAPI call fails, reuse cache
+	if (!$@ || !defined($data->{photos})) {
+	    $data->{photos} = \@photos;
+	    $data->{last_updated} = time;
+	}
+	$pd->data($data);
+	$pd->save or die $pd->errstr;
+    }
+    return @{$data->{photos}};
+}
+
 sub photos {
     my ($ctx, $args) = @_;
     my $user = $args->{user} or $ctx->error("'user' must be specified");
 
-    my $flickr = new MT::Plugin::FlickrPublicPhotos::API();
-    my @photos = $flickr->photos($user);
+    my @photos = eval { load_photos($user, $args->{refresh} || 3600); };
+    # if MT::PluginData is unavailable
+    @photos = eval { load_photos_fapi($user); } if $@;
 
     my $lastn = $args->{lastn} || 0;
     my $random = $args->{random} || 0;
