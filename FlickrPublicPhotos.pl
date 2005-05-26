@@ -1,6 +1,6 @@
 # A plugin for adding "FlickrPublicPhotos" container and related tags
 #
-# Release 0.13 (May 8, 2005)
+# Release 0.20 (May 26, 2005)
 #
 # This software is provided as-is. You may use it for commercial or 
 # personal use. If you distribute it, please keep this notice intact.
@@ -15,7 +15,7 @@ eval {
     require MT::Plugin;
     $plugin = new MT::Plugin();
     $plugin->name("FlickrPublicPhotos Plugin");
-    $plugin->description("Add FlickrPublicPhotos container and related tags. Version 0.13");
+    $plugin->description("Add FlickrPublicPhotos container and related tags. Version 0.20");
     $plugin->doc_link("http://as-is.net/hacks/2005/05/flickrpublicphotos_plugin.html");
     MT->add_plugin($plugin);
 };
@@ -42,11 +42,11 @@ sub load_photos_fapi {
 sub load_photos {
     my ($user, $refresh) = @_;
     require MT::PluginData;
-    my $pd = MT::PluginData->load({ plugin => 'FlickrPublicPhotos',
+    my $pd = MT::PluginData->load({ plugin => $plugin->name,
 				    key => $user });
     if (!$pd) {
 	$pd = new MT::PluginData();
-	$pd->plugin('FlickrPublicPhotos');
+	$pd->plugin($plugin->name);
 	$pd->key($user);
     }
     my $data = $pd->data() || {};
@@ -104,7 +104,46 @@ sub photo_url {
 }
 
 sub photo_img_url {
-    $_[0]->stash('flickr_public_photo')->img_url($_[1]->{size} || 't');
+    my ($ctx, $args) = @_;
+    my $url = $ctx->stash('flickr_public_photo')->img_url($args->{size} || 't');
+    my $cache = $args->{cache} or return $url;
+    $cache .= '/' unless $cache =~ m!/$!;
+
+    my ($fname) = $url =~ m!^https?://.+/(.*)$!;
+
+    my $site_url = $ctx->stash('blog')->site_url;
+    $site_url .= '/' unless $site_url =~ m!/$!;
+    $site_url .= $cache . $fname;
+
+    my $path = $ctx->stash('blog')->site_path;
+    $path .= '/' unless $path =~ m!/$!;
+    $path .= $cache;
+    my $fmgr = $ctx->stash('blog')->file_mgr;
+    unless ($fmgr->exists($path)) {
+	# mkpath, and if can't return original url
+	$fmgr->mkpath($path) or return $url;
+    }
+    $path .= $fname;
+
+    require LWP::UserAgent;
+    require HTTP::Request;
+    require HTTP::Response;
+    require HTTP::Date;
+    my $req = HTTP::Request->new(GET => $url);
+    my $ua = LWP::UserAgent->new;
+    if ($fmgr->exists($path) && (my $mtime = (stat($path))[9])) {
+	$req->header('If-Modified-Since', HTTP::Date::time2str($mtime));
+    }
+    my $rsp = $ua->request($req);
+    if ($rsp->is_success && $rsp->content) {
+	# put_data, and if can't return original url
+	$fmgr->put_data($rsp->content, $path) or return $url;
+	return $site_url;
+    } elsif ($rsp->code == 304) { # not modified
+	return $site_url;
+    } else {
+	return $url;
+    }
 }
 
 sub date_upload {
