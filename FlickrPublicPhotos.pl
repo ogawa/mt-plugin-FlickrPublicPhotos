@@ -67,8 +67,8 @@ sub load_photos {
 sub photos {
     my ($ctx, $args) = @_;
     my $user = $args->{user} or $ctx->error("'user' must be specified");
-
-    my @photos = eval { load_photos($user, $args->{refresh} || 3600); };
+    my $refresh = $args->{refresh} || 3600; # default: 1h
+    my @photos = eval { load_photos($user, $refresh); };
     # if MT::PluginData is unavailable
     @photos = eval { load_photos_fapi($user); } if $@;
 
@@ -108,6 +108,7 @@ sub photo_img_url {
     my $url = $ctx->stash('flickr_public_photo')->img_url($args->{size} || 't');
     my $cache = $args->{cache} or return $url;
     $cache .= '/' unless $cache =~ m!/$!;
+    my $refresh = $args->{cache_refresh} || 86400; # default: 24h
 
     my ($fname) = $url =~ m!^https?://.+/(.*)$!;
 
@@ -125,15 +126,19 @@ sub photo_img_url {
     }
     $path .= $fname;
 
+    my $mtime = 0;
+    if ($fmgr->exists($path)) {
+	$mtime = (stat($path))[9];
+	return $site_url if ($refresh && (time - $mtime < $refresh));
+    }
+
     require LWP::UserAgent;
     require HTTP::Request;
     require HTTP::Response;
     require HTTP::Date;
     my $req = HTTP::Request->new(GET => $url);
     my $ua = LWP::UserAgent->new;
-    if ($fmgr->exists($path) && (my $mtime = (stat($path))[9])) {
-	$req->header('If-Modified-Since', HTTP::Date::time2str($mtime));
-    }
+    $req->header('If-Modified-Since', HTTP::Date::time2str($mtime)) if $mtime;
     my $rsp = $ua->request($req);
     if ($rsp->is_success && $rsp->content) {
 	# put_data, and if can't return original url
