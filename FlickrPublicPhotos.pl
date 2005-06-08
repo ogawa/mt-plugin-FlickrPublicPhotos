@@ -1,6 +1,6 @@
 # A plugin for adding "FlickrPublicPhotos" container and related tags
 #
-# Release 0.20 (May 26, 2005)
+# Release 0.21 (June 6, 2005)
 #
 # This software is provided as-is. You may use it for commercial or 
 # personal use. If you distribute it, please keep this notice intact.
@@ -15,7 +15,7 @@ eval {
     require MT::Plugin;
     $plugin = new MT::Plugin();
     $plugin->name("FlickrPublicPhotos Plugin");
-    $plugin->description("Add FlickrPublicPhotos container and related tags. Version 0.20");
+    $plugin->description("Add FlickrPublicPhotos container and related tags. Version 0.21");
     $plugin->doc_link("http://as-is.net/hacks/2005/05/flickrpublicphotos_plugin.html");
     MT->add_plugin($plugin);
 };
@@ -50,13 +50,14 @@ sub load_photos {
 	$pd->key($user);
     }
     my $data = $pd->data() || {};
+    my $now = time;
     if (!defined($data->{last_updated}) || !defined($data->{photos}) ||
-	(time - $data->{last_updated} >= $refresh)) {
+	($now - $data->{last_updated} >= $refresh)) {
 	my @photos = eval { load_photos_fapi($user); };
 	# if FlickrAPI call fails, reuse cache
 	if (!$@ || !defined($data->{photos})) {
 	    $data->{photos} = \@photos;
-	    $data->{last_updated} = time;
+	    $data->{last_updated} = $now;
 	}
 	$pd->data($data);
 	$pd->save or die $pd->errstr;
@@ -127,9 +128,10 @@ sub photo_img_url {
     $path .= $fname;
 
     my $mtime = 0;
+    my $now = time;
     if ($fmgr->exists($path)) {
 	$mtime = (stat($path))[9];
-	return $site_url if ($refresh && (time - $mtime < $refresh));
+	return $site_url if ($refresh && ($now - $mtime < $refresh));
     }
 
     require LWP::UserAgent;
@@ -143,12 +145,12 @@ sub photo_img_url {
     if ($rsp->is_success && $rsp->content) {
 	# put_data, and if can't return original url
 	$fmgr->put_data($rsp->content, $path) or return $url;
-	return $site_url;
+	$url = $site_url;
     } elsif ($rsp->code == 304) { # not modified
-	return $site_url;
-    } else {
-	return $url;
+	utime $now, $now, $path; # touch it
+	$url = $site_url;
     }
+    $url;
 }
 
 sub date_upload {
