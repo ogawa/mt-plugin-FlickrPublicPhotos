@@ -1,6 +1,6 @@
 # A plugin for adding "FlickrPublicPhotos" container and related tags
 #
-# Release 0.21 (June 6, 2005)
+# $Id$
 #
 # This software is provided as-is. You may use it for commercial or 
 # personal use. If you distribute it, please keep this notice intact.
@@ -9,14 +9,21 @@
 
 package MT::Plugin::FlickrPublicPhotos;
 use strict;
+use vars qw($VERSION);
+
+$VERSION = '0.22';
 
 my $plugin;
 eval {
     require MT::Plugin;
-    $plugin = new MT::Plugin();
-    $plugin->name("FlickrPublicPhotos Plugin");
-    $plugin->description("Add FlickrPublicPhotos container and related tags. Version 0.21");
-    $plugin->doc_link("http://as-is.net/hacks/2005/05/flickrpublicphotos_plugin.html");
+    $plugin = new MT::Plugin({
+	name => 'FlickrPublicPhotos',
+	description => 'Add FlickrPublicPhotos container and related tags.',
+	doc_link => 'http://as-is.net/hacks/2005/05/flickrpublicphotos_plugin.html',
+	author_name => 'Hirotaka Ogawa',
+	author_link => 'http://profile.typekey.com/ogawa/',
+	version => $VERSION
+	});
     MT->add_plugin($plugin);
 };
 
@@ -209,7 +216,7 @@ sub img_url {
     my $this = shift;
     my ($size) = @_;
     $size = $sizes{(lc $size) || 't'};
-    my $url = 'http://photos' . $this->{server} . '.flickr.com/' . $this->{id} . '_' . $this->{secret} . $size . '.jpg';
+    my $url = 'http://static.flickr.com/' . $this->{server} . '/' . $this->{id} . '_' . $this->{secret} . $size . '.jpg';
     $url;
 }
 }
