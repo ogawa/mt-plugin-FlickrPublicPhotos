@@ -28,9 +28,9 @@ This plugin is supported on Movable Type 3.0 or later.
 
 The following Perl Modules provided by Cal Henderson are required:
 
- * [http://search.cpan.org/~iamcal/Flickr-API-0.03/]()
- * [http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-0.03/]()
- * [http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-XPath-0.02/]()
+ * [http://search.cpan.org/~iamcal/Flickr-API-0.03/](http://search.cpan.org/~iamcal/Flickr-API-0.03/)
+ * [http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-0.03/](http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-0.03/)
+ * [http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-XPath-0.02/](http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-XPath-0.02/)
 
 ## Installation
 
@@ -121,7 +121,7 @@ The above will look like in your browser:
 
 ## License
 
-This code is released under the Artistic License. The terms of the Artistic License are described at [http://www.perl.com/language/misc/Artistic.html]().
+This code is released under the Artistic License. The terms of the Artistic License are described at [http://www.perl.com/language/misc/Artistic.html](http://www.perl.com/language/misc/Artistic.html).
 
 ## Author & Copyright
 

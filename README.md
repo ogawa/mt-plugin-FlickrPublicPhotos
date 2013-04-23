@@ -39,9 +39,9 @@ Movable Typeがインストールされている必要があります。Movable 
 
 Cal Henderson作の以下の3つのPerl Moduleがインストールされている必要があります。
 
- * [http://search.cpan.org/~iamcal/Flickr-API-0.03/]()
- * [http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-0.03/]()
- * [http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-XPath-0.02/]()
+ * [http://search.cpan.org/~iamcal/Flickr-API-0.03/](http://search.cpan.org/~iamcal/Flickr-API-0.03/)
+ * [http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-0.03/](http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-0.03/)
+ * [http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-XPath-0.02/](http://search.cpan.org/~iamcal/XML-Parser-Lite-Tree-XPath-0.02/)
 
 ## インストール方法
 
@@ -143,7 +143,7 @@ cacheオプションで指定する相対パスのディレクトリが存在し
 
 ## License
 
-This code is released under the Artistic License. The terms of the Artistic License are described at [http://www.perl.com/language/misc/Artistic.html]().
+This code is released under the Artistic License. The terms of the Artistic License are described at [http://www.perl.com/language/misc/Artistic.html](http://www.perl.com/language/misc/Artistic.html).
 
 ## Author & Copyright
 
